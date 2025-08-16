@@ -1,4 +1,3 @@
-import { Home, BookOpen, BarChart3, MessageCircle, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavigationProps {
@@ -7,19 +6,18 @@ interface NavigationProps {
 }
 
 const navigationItems = [
-  { id: "home", icon: Home, label: "Home" },
-  { id: "journal", icon: BookOpen, label: "Journal" },
-  { id: "insights", icon: BarChart3, label: "Insights" },
-  { id: "circles", icon: MessageCircle, label: "Circles" },
-  { id: "you", icon: User, label: "You" },
+  { id: "home", icon: "🌿", label: "Home" },
+  { id: "journal", icon: "📝", label: "Journal" },
+  { id: "insights", icon: "📊", label: "Insights" },
+  { id: "circles", icon: "💬", label: "Circles" },
+  { id: "you", icon: "⚙️", label: "You" },
 ];
 
 export function Navigation({ activeTab, onTabChange }: NavigationProps) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-md border-t border-border z-50">
-      <div className="flex items-center justify-around py-2 px-4">
+      <div className="flex items-center justify-around py-3 px-4">
         {navigationItems.map((item) => {
-          const Icon = item.icon;
           const isActive = activeTab === item.id;
           
           return (
@@ -34,13 +32,12 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
                   : "text-muted-foreground"
               )}
             >
-              <Icon 
-                size={20} 
-                className={cn(
-                  "transition-all duration-300",
-                  isActive && "animate-gentle-pulse"
-                )} 
-              />
+              <div className={cn(
+                "text-lg transition-all duration-300",
+                isActive && "animate-gentle-pulse"
+              )}>
+                {item.icon}
+              </div>
               <span className="text-xs mt-1 font-medium">{item.label}</span>
             </button>
           );

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Navigation } from "@/components/ui/navigation";
 import { WelcomeCard } from "@/components/WelcomeCard";
-import { MoodCheckIn } from "@/components/MoodCheckIn";
+import { MoodCheckInModal } from "@/components/MoodCheckInModal";
 import { QuickCalmTools } from "@/components/QuickCalmTools";
 import { JournalPrompt } from "@/components/JournalPrompt";
 import { DailyAffirmation } from "@/components/DailyAffirmation";
 import { UpgradeCard } from "@/components/UpgradeCard";
+import { YouPage } from "@/components/YouPage";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
@@ -16,7 +17,7 @@ const Index = () => {
         return (
           <div className="space-y-6">
             <WelcomeCard userName="Sheila" />
-            <MoodCheckIn />
+            <MoodCheckInModal />
             <QuickCalmTools />
             <JournalPrompt />
             <DailyAffirmation />
@@ -26,31 +27,26 @@ const Index = () => {
       case "journal":
         return (
           <div className="text-center py-20">
-            <h1 className="text-2xl font-semibold text-foreground mb-4">Journal</h1>
+            <h1 className="text-2xl font-semibold text-foreground mb-4">📝 Journal</h1>
             <p className="text-muted-foreground">Your thoughts and reflections</p>
           </div>
         );
       case "insights":
         return (
           <div className="text-center py-20">
-            <h1 className="text-2xl font-semibold text-foreground mb-4">Insights</h1>
+            <h1 className="text-2xl font-semibold text-foreground mb-4">📊 Insights</h1>
             <p className="text-muted-foreground">Your mood patterns and progress</p>
           </div>
         );
       case "circles":
         return (
           <div className="text-center py-20">
-            <h1 className="text-2xl font-semibold text-foreground mb-4">Circles</h1>
+            <h1 className="text-2xl font-semibold text-foreground mb-4">💬 Circles</h1>
             <p className="text-muted-foreground">Connect with your support community</p>
           </div>
         );
       case "you":
-        return (
-          <div className="text-center py-20">
-            <h1 className="text-2xl font-semibold text-foreground mb-4">You</h1>
-            <p className="text-muted-foreground">Your profile and personalization</p>
-          </div>
-        );
+        return <YouPage />;
       default:
         return null;
     }

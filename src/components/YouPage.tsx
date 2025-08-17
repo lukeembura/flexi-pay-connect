@@ -1,8 +1,30 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { LogOut } from "lucide-react";
 
 export function YouPage() {
+  const { signOut } = useAuth();
+  const { toast } = useToast();
+
+  const handleSignOut = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Signed out",
+        description: "You've been successfully signed out.",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -79,6 +101,18 @@ export function YouPage() {
           <p className="text-sm text-muted-foreground">• Gentle sounds (chimes, water, soft wind)</p>
         </div>
       </div>
+
+      {/* Sign Out Button */}
+      <Card className="p-4 bg-secondary/20 border-secondary/30 rounded-2xl">
+        <Button 
+          onClick={handleSignOut}
+          variant="outline" 
+          className="w-full flex items-center gap-2 text-muted-foreground hover:text-destructive"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </Button>
+      </Card>
     </div>
   );
 }

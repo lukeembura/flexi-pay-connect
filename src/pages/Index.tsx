@@ -8,6 +8,9 @@ import { JournalPrompt } from "@/components/JournalPrompt";
 import { DailyAffirmation } from "@/components/DailyAffirmation";
 import { UpgradeCard } from "@/components/UpgradeCard";
 import { YouPage } from "@/components/YouPage";
+import { JournalPage } from "@/components/JournalPage";
+import { InsightsPage } from "@/components/InsightsPage";
+import { CirclesPage } from "@/components/CirclesPage";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -67,26 +70,11 @@ const Index = () => {
           </div>
         );
       case "journal":
-        return (
-          <div className="text-center py-20">
-            <h1 className="text-2xl font-semibold text-foreground mb-4">📝 Journal</h1>
-            <p className="text-muted-foreground">Your thoughts and reflections</p>
-          </div>
-        );
+        return <JournalPage />;
       case "insights":
-        return (
-          <div className="text-center py-20">
-            <h1 className="text-2xl font-semibold text-foreground mb-4">📊 Insights</h1>
-            <p className="text-muted-foreground">Your mood patterns and progress</p>
-          </div>
-        );
+        return <InsightsPage />;
       case "circles":
-        return (
-          <div className="text-center py-20">
-            <h1 className="text-2xl font-semibold text-foreground mb-4">💬 Circles</h1>
-            <p className="text-muted-foreground">Connect with your support community</p>
-          </div>
-        );
+        return <CirclesPage />;
       case "you":
         return <YouPage />;
       default:

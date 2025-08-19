@@ -1,9 +1,12 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Sparkles } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Check, Crown, Sparkles, Phone } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PlanFeature {
   text: string;
@@ -59,26 +62,115 @@ const plans: SubscriptionPlan[] = [
 
 export function SubscriptionPlans() {
   const [loading, setLoading] = useState<string | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleSubscribe = async (planId: string) => {
+    if (!phoneNumber) {
+      toast({
+        title: "Phone Number Required",
+        description: "Please enter your M-Pesa phone number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate phone number format
+    const phoneRegex = /^254[17]\d{8}$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      toast({
+        title: "Invalid Phone Number",
+        description: "Please use format: 254XXXXXXXXX (e.g., 254712345678)",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(planId);
+    setSelectedPlan(planId);
     
     try {
-      // TODO: Integrate with Daraja API for M-Pesa payments
-      toast({
-        title: "Coming Soon",
-        description: "M-Pesa integration will be available shortly. Please check back soon!",
+      const { data, error } = await supabase.functions.invoke('initiate-payment', {
+        body: { phoneNumber, planId }
       });
-    } catch (error) {
+
+      if (error) throw error;
+
       toast({
-        title: "Payment Error",
-        description: "Something went wrong. Please try again.",
+        title: "Payment Request Sent",
+        description: "Please check your phone and enter your M-Pesa PIN to complete the payment.",
+      });
+
+      setPaymentStatus("pending");
+      
+      // Start polling for payment status
+      const checkoutRequestId = data.checkoutRequestId;
+      pollPaymentStatus(checkoutRequestId);
+
+    } catch (error: any) {
+      toast({
+        title: "Payment Failed",
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
       setLoading(null);
     }
+  };
+
+  const pollPaymentStatus = async (checkoutRequestId: string) => {
+    const maxAttempts = 30; // 30 attempts over 3 minutes
+    let attempts = 0;
+
+    const checkStatus = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('check-payment-status', {
+          body: { checkoutRequestId }
+        });
+
+        if (error) throw error;
+
+        if (data.status === "completed" && data.resultCode === 0) {
+          setPaymentStatus("success");
+          toast({
+            title: "Payment Successful!",
+            description: `Welcome to ${data.subscriptionTier}! Your subscription is now active.`,
+          });
+          return;
+        } else if (data.status === "failed") {
+          setPaymentStatus("failed");
+          toast({
+            title: "Payment Failed",
+            description: data.resultDescription || "Payment was not completed.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Continue polling if still pending
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(checkStatus, 6000); // Check every 6 seconds
+        } else {
+          setPaymentStatus("timeout");
+          toast({
+            title: "Payment Status Unknown",
+            description: "Please check your M-Pesa messages and contact support if payment was deducted.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Status check error:", error);
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(checkStatus, 6000);
+        }
+      }
+    };
+
+    checkStatus();
   };
 
   return (
@@ -89,6 +181,48 @@ export function SubscriptionPlans() {
           Unlock the full potential of your wellness journey
         </p>
       </div>
+
+      {/* Phone Number Input */}
+      <Card className="p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <Phone className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold">M-Pesa Payment Details</h3>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="phone">M-Pesa Phone Number</Label>
+          <Input
+            id="phone"
+            type="tel"
+            placeholder="254712345678"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            className="w-full"
+          />
+          <p className="text-sm text-muted-foreground">
+            Enter your M-Pesa registered phone number (format: 254XXXXXXXXX)
+          </p>
+        </div>
+      </Card>
+
+      {paymentStatus === "pending" && (
+        <Card className="p-4 bg-blue-50 border-blue-200">
+          <div className="text-center">
+            <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+            <p className="text-blue-800 font-medium">Processing Payment...</p>
+            <p className="text-sm text-blue-600">Please complete the payment on your phone</p>
+          </div>
+        </Card>
+      )}
+
+      {paymentStatus === "success" && (
+        <Card className="p-4 bg-green-50 border-green-200">
+          <div className="text-center">
+            <Check className="w-8 h-8 text-green-600 mx-auto mb-2" />
+            <p className="text-green-800 font-medium">Payment Successful!</p>
+            <p className="text-sm text-green-600">Your subscription is now active</p>
+          </div>
+        </Card>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         {plans.map((plan) => {

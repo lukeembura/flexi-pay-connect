@@ -6,11 +6,25 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper logging function
+function logStep(step: string, details?: any) {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[INITIATE-PAYMENT] ${step}${detailsStr}`);
+}
+
 // Helper function to get M-Pesa access token
 async function getMpesaAccessToken() {
+  logStep("Getting M-Pesa access token");
+  
   const consumerKey = Deno.env.get("MPESA_CONSUMER_KEY");
   const consumerSecret = Deno.env.get("MPESA_CONSUMER_SECRET");
   const environment = Deno.env.get("MPESA_ENVIRONMENT");
+  
+  logStep("Environment variables", { 
+    hasConsumerKey: !!consumerKey, 
+    hasConsumerSecret: !!consumerSecret, 
+    environment 
+  });
   
   if (!consumerKey || !consumerSecret) {
     throw new Error("M-Pesa credentials not configured");
@@ -21,29 +35,47 @@ async function getMpesaAccessToken() {
     : "https://api.safaricom.co.ke";
   
   const auth = btoa(`${consumerKey}:${consumerSecret}`);
+  const tokenUrl = `${baseUrl}/oauth/v1/generate?grant_type=client_credentials`;
   
-  const response = await fetch(`${baseUrl}/oauth/v1/generate?grant_type=client_credentials`, {
-    method: "GET",
-    headers: {
-      "Authorization": `Basic ${auth}`,
-      "Content-Type": "application/json",
-    },
-  });
+  logStep("Requesting access token", { tokenUrl });
   
-  const data = await response.json();
-  
-  if (!response.ok) {
-    throw new Error(`Failed to get access token: ${data.errorMessage || "Unknown error"}`);
+  try {
+    const response = await fetch(tokenUrl, {
+      method: "GET",
+      headers: {
+        "Authorization": `Basic ${auth}`,
+        "Content-Type": "application/json",
+      },
+    });
+    
+    const data = await response.json();
+    logStep("Token response", { status: response.status, hasAccessToken: !!data.access_token });
+    
+    if (!response.ok) {
+      logStep("Token request failed", { status: response.status, data });
+      throw new Error(`Failed to get access token: ${data.errorMessage || data.error_description || "Unknown error"}`);
+    }
+    
+    return data.access_token;
+  } catch (error) {
+    logStep("Token request error", { error: error.message });
+    throw error;
   }
-  
-  return data.access_token;
 }
 
 // Helper function to initiate STK Push
 async function initiateStkPush(accessToken: string, phoneNumber: string, amount: number, accountReference: string) {
+  logStep("Initiating STK Push", { phoneNumber, amount, accountReference });
+  
   const shortcode = Deno.env.get("MPESA_SHORTCODE");
   const passkey = Deno.env.get("MPESA_PASSKEY");
   const environment = Deno.env.get("MPESA_ENVIRONMENT");
+  
+  logStep("STK Push config", { 
+    hasShortcode: !!shortcode, 
+    hasPasskey: !!passkey, 
+    environment 
+  });
   
   if (!shortcode || !passkey) {
     throw new Error("M-Pesa configuration missing");
@@ -70,22 +102,32 @@ async function initiateStkPush(accessToken: string, phoneNumber: string, amount:
     TransactionDesc: "SereniYou Subscription Payment"
   };
   
-  const response = await fetch(`${baseUrl}/mpesa/stkpush/v1/processrequest`, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(stkPushData),
-  });
+  const stkPushUrl = `${baseUrl}/mpesa/stkpush/v1/processrequest`;
+  logStep("STK Push request", { url: stkPushUrl, timestamp });
   
-  const data = await response.json();
-  
-  if (!response.ok) {
-    throw new Error(`STK Push failed: ${data.errorMessage || "Unknown error"}`);
+  try {
+    const response = await fetch(stkPushUrl, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(stkPushData),
+    });
+    
+    const data = await response.json();
+    logStep("STK Push response", { status: response.status, data });
+    
+    if (!response.ok) {
+      logStep("STK Push failed", { status: response.status, data });
+      throw new Error(`STK Push failed: ${data.errorMessage || data.errorDescription || "Unknown error"}`);
+    }
+    
+    return data;
+  } catch (error) {
+    logStep("STK Push error", { error: error.message });
+    throw error;
   }
-  
-  return data;
 }
 
 serve(async (req) => {
@@ -94,6 +136,8 @@ serve(async (req) => {
   }
 
   try {
+    logStep("Payment request started");
+    
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
@@ -102,6 +146,7 @@ serve(async (req) => {
     // Get authenticated user
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      logStep("No authorization header");
       throw new Error("No authorization header provided");
     }
 
@@ -109,10 +154,16 @@ serve(async (req) => {
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     
     if (userError || !userData.user) {
+      logStep("Authentication failed", { userError });
       throw new Error("User not authenticated");
     }
 
-    const { phoneNumber, planId } = await req.json();
+    logStep("User authenticated", { userId: userData.user.id });
+
+    const requestBody = await req.json();
+    const { phoneNumber, planId } = requestBody;
+    
+    logStep("Request data", { phoneNumber, planId });
     
     if (!phoneNumber || !planId) {
       throw new Error("Phone number and plan ID are required");
@@ -121,6 +172,7 @@ serve(async (req) => {
     // Validate phone number format (Kenyan format)
     const kenyanPhoneRegex = /^254[17]\d{8}$/;
     if (!kenyanPhoneRegex.test(phoneNumber)) {
+      logStep("Invalid phone number format", { phoneNumber });
       throw new Error("Invalid phone number. Use format: 254XXXXXXXXX");
     }
 
@@ -132,11 +184,15 @@ serve(async (req) => {
     
     const amount = amounts[planId as keyof typeof amounts];
     if (!amount) {
+      logStep("Invalid plan", { planId });
       throw new Error("Invalid plan selected");
     }
 
+    logStep("Plan validated", { planId, amount });
+
     // Get M-Pesa access token
     const accessToken = await getMpesaAccessToken();
+    logStep("Access token obtained");
     
     // Create account reference (user ID + plan)
     const accountReference = `${userData.user.id.slice(0, 8)}-${planId}`;
@@ -149,6 +205,8 @@ serve(async (req) => {
       accountReference
     );
 
+    logStep("STK Push successful", { checkoutRequestId: stkPushResponse.CheckoutRequestID });
+
     // Store payment request in database for tracking
     const supabaseService = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -156,7 +214,7 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    await supabaseService.from("payment_requests").insert({
+    const insertResult = await supabaseService.from("payment_requests").insert({
       user_id: userData.user.id,
       checkout_request_id: stkPushResponse.CheckoutRequestID,
       merchant_request_id: stkPushResponse.MerchantRequestID,
@@ -166,6 +224,13 @@ serve(async (req) => {
       status: "pending",
       created_at: new Date().toISOString()
     });
+
+    if (insertResult.error) {
+      logStep("Database insert failed", { error: insertResult.error });
+      throw new Error(`Database error: ${insertResult.error.message}`);
+    }
+
+    logStep("Payment request stored in database");
 
     return new Response(JSON.stringify({
       success: true,
@@ -177,9 +242,12 @@ serve(async (req) => {
     });
 
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Payment failed";
+    logStep("Payment error", { error: errorMessage });
     console.error("Payment error:", error);
+    
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : "Payment failed" 
+      error: errorMessage 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

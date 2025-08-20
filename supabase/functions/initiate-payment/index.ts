@@ -30,7 +30,7 @@ async function getMpesaAccessToken() {
     throw new Error("M-Pesa credentials not configured");
   }
   
-  const baseUrl = environment === "sandbox" 
+  const baseUrl = environment?.toLowerCase() === "sandbox" 
     ? "https://sandbox.safaricom.co.ke" 
     : "https://api.safaricom.co.ke";
   
@@ -48,7 +48,19 @@ async function getMpesaAccessToken() {
       },
     });
     
-    const data = await response.json();
+    logStep("Raw response", { status: response.status, headers: Object.fromEntries(response.headers.entries()) });
+    
+    const responseText = await response.text();
+    logStep("Response text", { text: responseText });
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      logStep("JSON parse error", { parseError: parseError.message, responseText });
+      throw new Error(`Invalid JSON response from M-Pesa API: ${responseText}`);
+    }
+    
     logStep("Token response", { status: response.status, hasAccessToken: !!data.access_token });
     
     if (!response.ok) {
@@ -81,7 +93,7 @@ async function initiateStkPush(accessToken: string, phoneNumber: string, amount:
     throw new Error("M-Pesa configuration missing");
   }
   
-  const baseUrl = environment === "sandbox" 
+  const baseUrl = environment?.toLowerCase() === "sandbox" 
     ? "https://sandbox.safaricom.co.ke" 
     : "https://api.safaricom.co.ke";
   
@@ -115,7 +127,19 @@ async function initiateStkPush(accessToken: string, phoneNumber: string, amount:
       body: JSON.stringify(stkPushData),
     });
     
-    const data = await response.json();
+    logStep("STK Push raw response", { status: response.status, headers: Object.fromEntries(response.headers.entries()) });
+    
+    const responseText = await response.text();
+    logStep("STK Push response text", { text: responseText });
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      logStep("STK Push JSON parse error", { parseError: parseError.message, responseText });
+      throw new Error(`Invalid JSON response from M-Pesa STK Push API: ${responseText}`);
+    }
+    
     logStep("STK Push response", { status: response.status, data });
     
     if (!response.ok) {

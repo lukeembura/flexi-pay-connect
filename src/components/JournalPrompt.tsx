@@ -1,8 +1,12 @@
 import { Card } from "@/components/ui/card";
 
-export function JournalPrompt() {
+interface JournalPromptProps {
+  onNavigateToJournal: () => void;
+}
+
+export function JournalPrompt({ onNavigateToJournal }: JournalPromptProps) {
   return (
-    <Card className="p-4 bg-accent/20 border-accent/30 hover:shadow-gentle transition-all duration-300 cursor-pointer group rounded-2xl">
+    <Card className="p-4 bg-accent/20 border-accent/30 hover:shadow-gentle transition-all duration-300 cursor-pointer group rounded-2xl" onClick={onNavigateToJournal}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="text-2xl">✍️</div>

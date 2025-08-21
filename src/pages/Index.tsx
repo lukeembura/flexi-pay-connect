@@ -64,7 +64,7 @@ const Index = () => {
             <WelcomeCard userName={user.user_metadata?.display_name || user.email?.split('@')[0] || "User"} />
             <MoodCheckInModal />
             <QuickCalmTools />
-            <JournalPrompt />
+            <JournalPrompt onNavigateToJournal={() => setActiveTab("journal")} />
             <DailyAffirmation />
             <UpgradeCard />
           </div>

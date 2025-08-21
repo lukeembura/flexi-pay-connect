@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { BreathingExercise } from "./BreathingExercise";
+import { GroundingExercise } from "./GroundingExercise";
 import { useState } from "react";
 
 interface CalmToolProps {
@@ -31,9 +32,14 @@ function CalmTool({ icon, title, duration, color, onClick }: CalmToolProps) {
 
 export function QuickCalmTools() {
   const [showBreathing, setShowBreathing] = useState(false);
+  const [showGrounding, setShowGrounding] = useState(false);
 
   if (showBreathing) {
     return <BreathingExercise onClose={() => setShowBreathing(false)} />;
+  }
+
+  if (showGrounding) {
+    return <GroundingExercise onClose={() => setShowGrounding(false)} />;
   }
 
   return (
@@ -52,6 +58,7 @@ export function QuickCalmTools() {
           title="Ground"
           duration="5 min"
           color="bg-calm-mint"
+          onClick={() => setShowGrounding(true)}
         />
       </div>
     </div>

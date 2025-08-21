@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const moodEmojis = [
   { emoji: "😊", label: "Happy", value: "happy" },
@@ -15,12 +18,53 @@ const moodEmojis = [
 
 export function MoodCheckInModal() {
   const [selectedMood, setSelectedMood] = useState<string>("");
+  const [notes, setNotes] = useState<string>("");
   const [isOpen, setIsOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
-  const handleSubmit = () => {
-    // Handle mood submission
-    console.log("Mood selected:", selectedMood);
-    setIsOpen(false);
+  const handleSubmit = async () => {
+    if (!selectedMood) return;
+    
+    setIsSubmitting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to save your mood",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase.from("mood_entries").insert({
+        user_id: user.id,
+        mood: selectedMood,
+        notes: notes.trim() || null,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Mood saved! 🎉",
+        description: "Your mood has been recorded successfully",
+      });
+
+      setSelectedMood("");
+      setNotes("");
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Error saving mood:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save mood. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) {
@@ -64,16 +108,28 @@ export function MoodCheckInModal() {
         ))}
       </div>
 
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-foreground mb-2">
+          Add a note (optional)
+        </label>
+        <Textarea
+          placeholder="How are you feeling? What's on your mind?"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          className="min-h-[80px]"
+        />
+      </div>
+
       <div className="flex gap-3">
         <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
           Cancel
         </Button>
         <Button 
           onClick={handleSubmit} 
-          disabled={!selectedMood}
+          disabled={!selectedMood || isSubmitting}
           className="flex-1 bg-primary hover:bg-primary/90"
         >
-          Save Mood
+          {isSubmitting ? "Saving..." : "Save Mood"}
         </Button>
       </div>
     </Card>

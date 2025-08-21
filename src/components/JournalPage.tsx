@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Calendar, BookOpen } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface JournalEntry {
   id: string;
@@ -16,33 +18,57 @@ interface JournalEntry {
 }
 
 export function JournalPage() {
-  const [entries, setEntries] = useState<JournalEntry[]>([
-    {
-      id: "1",
-      title: "A Peaceful Morning",
-      content: "Today I woke up feeling grateful for the simple things. The sun was shining through my window, and I could hear birds singing. It reminded me to slow down and appreciate the present moment.",
-      mood: "Grateful",
-      date: "2024-01-16",
-      tags: ["gratitude", "morning", "mindfulness"]
-    },
-    {
-      id: "2", 
-      title: "Reflection on Growth",
-      content: "I've been thinking about how much I've changed this year. The challenges I faced seemed overwhelming at the time, but looking back, they've made me stronger and more resilient.",
-      mood: "Reflective",
-      date: "2024-01-15",
-      tags: ["growth", "reflection", "resilience"]
-    }
-  ]);
-  
+  const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [isWriting, setIsWriting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const [newEntry, setNewEntry] = useState({
     title: "",
     content: "",
     mood: "",
     tags: ""
   });
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadEntries();
+  }, []);
+
+  const loadEntries = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("journal_entries")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      setEntries(data.map(entry => ({
+        id: entry.id,
+        title: entry.title,
+        content: entry.content,
+        mood: entry.mood || "",
+        date: entry.created_at,
+        tags: entry.tags || []
+      })));
+    } catch (error) {
+      console.error("Error loading entries:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load journal entries",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredEntries = entries.filter(entry =>
     entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -50,19 +76,59 @@ export function JournalPage() {
     entry.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleSaveEntry = () => {
+  const handleSaveEntry = async () => {
     if (newEntry.title && newEntry.content) {
-      const entry: JournalEntry = {
-        id: Date.now().toString(),
-        title: newEntry.title,
-        content: newEntry.content,
-        mood: newEntry.mood || "Neutral",
-        date: new Date().toISOString().split('T')[0],
-        tags: newEntry.tags.split(',').map(tag => tag.trim()).filter(Boolean)
-      };
-      setEntries([entry, ...entries]);
-      setNewEntry({ title: "", content: "", mood: "", tags: "" });
-      setIsWriting(false);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          toast({
+            title: "Authentication required",
+            description: "Please log in to save your journal entry",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("journal_entries")
+          .insert({
+            user_id: user.id,
+            title: newEntry.title,
+            content: newEntry.content,
+            mood: newEntry.mood || null,
+            tags: newEntry.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        const entry: JournalEntry = {
+          id: data.id,
+          title: data.title,
+          content: data.content,
+          mood: data.mood || "",
+          date: data.created_at,
+          tags: data.tags || []
+        };
+
+        setEntries([entry, ...entries]);
+        setNewEntry({ title: "", content: "", mood: "", tags: "" });
+        setIsWriting(false);
+        
+        toast({
+          title: "Entry saved! 📝",
+          description: "Your journal entry has been saved successfully",
+        });
+      } catch (error) {
+        console.error("Error saving entry:", error);
+        toast({
+          title: "Error",
+          description: "Failed to save journal entry. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -141,7 +207,13 @@ export function JournalPage() {
       </div>
 
       <div className="space-y-4">
-        {filteredEntries.length === 0 ? (
+        {isLoading ? (
+          <Card className="p-8 text-center">
+            <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-pulse" />
+            <h3 className="text-lg font-medium text-foreground mb-2">Loading your entries...</h3>
+            <p className="text-muted-foreground">Please wait while we fetch your journal</p>
+          </Card>
+        ) : filteredEntries.length === 0 ? (
           <Card className="p-8 text-center">
             <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">

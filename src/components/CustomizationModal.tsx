@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,66 +5,51 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Palette, Volume2, Bell, Moon, Sun } from "lucide-react";
+import { useSettings } from "@/hooks/useSettings";
+import { Palette, Volume2, Bell, Moon, Sun, TestTube } from "lucide-react";
 
 interface CustomizationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-interface CustomizationSettings {
-  theme: 'light' | 'dark' | 'system';
-  colorScheme: 'lavender' | 'sage' | 'blush' | 'ocean';
-  soundEnabled: boolean;
-  backgroundSounds: boolean;
-  notificationsEnabled: boolean;
-  moodReminders: boolean;
-  journalReminders: boolean;
-  breathingReminders: boolean;
-}
-
 const colorSchemes = {
-  lavender: { name: 'Soft Lavender', primary: '#8B5CF6', secondary: '#E9D5FF' },
-  sage: { name: 'Sage Green', primary: '#10B981', secondary: '#D1FAE5' },
-  blush: { name: 'Blush Pink', primary: '#F472B6', secondary: '#FCE7F3' },
-  ocean: { name: 'Ocean Blue', primary: '#3B82F6', secondary: '#DBEAFE' }
+  lavender: { name: 'Soft Lavender', primary: 'hsl(260, 60%, 65%)', secondary: 'hsl(260, 30%, 85%)' },
+  sage: { name: 'Sage Green', primary: 'hsl(120, 25%, 65%)', secondary: 'hsl(120, 20%, 85%)' },
+  blush: { name: 'Blush Pink', primary: 'hsl(340, 60%, 70%)', secondary: 'hsl(340, 30%, 90%)' },
+  ocean: { name: 'Ocean Blue', primary: 'hsl(200, 60%, 65%)', secondary: 'hsl(200, 30%, 85%)' }
 };
 
 export function CustomizationModal({ open, onOpenChange }: CustomizationModalProps) {
   const { toast } = useToast();
-  const [settings, setSettings] = useState<CustomizationSettings>({
-    theme: 'system',
-    colorScheme: 'lavender',
-    soundEnabled: true,
-    backgroundSounds: false,
-    notificationsEnabled: true,
-    moodReminders: true,
-    journalReminders: true,
-    breathingReminders: false
-  });
-
-  useEffect(() => {
-    // Load saved settings from localStorage
-    const savedSettings = localStorage.getItem('sereniYou-settings');
-    if (savedSettings) {
-      setSettings(JSON.parse(savedSettings));
-    }
-  }, [open]);
+  const { settings, updateSetting, playSound, requestNotificationPermission } = useSettings();
 
   const handleSave = () => {
-    localStorage.setItem('sereniYou-settings', JSON.stringify(settings));
+    playSound('success');
     toast({
       title: "Settings Saved",
-      description: "Your customization preferences have been saved.",
+      description: "Your customization preferences have been applied.",
     });
     onOpenChange(false);
   };
 
-  const updateSetting = <K extends keyof CustomizationSettings>(
-    key: K, 
-    value: CustomizationSettings[K]
-  ) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+  const handleNotificationToggle = async (checked: boolean) => {
+    if (checked) {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        toast({
+          title: "Notifications Blocked",
+          description: "Please enable notifications in your browser settings.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    updateSetting('notificationsEnabled', checked);
+  };
+
+  const testSound = (soundType: 'click' | 'success' | 'notification') => {
+    playSound(soundType);
   };
 
   return (
@@ -93,7 +77,10 @@ export function CustomizationModal({ open, onOpenChange }: CustomizationModalPro
                   <Button
                     variant={settings.theme === 'light' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => updateSetting('theme', 'light')}
+                    onClick={() => {
+                      playSound('click');
+                      updateSetting('theme', 'light');
+                    }}
                     className="flex items-center gap-2"
                   >
                     <Sun className="h-4 w-4" />
@@ -102,7 +89,10 @@ export function CustomizationModal({ open, onOpenChange }: CustomizationModalPro
                   <Button
                     variant={settings.theme === 'dark' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => updateSetting('theme', 'dark')}
+                    onClick={() => {
+                      playSound('click');
+                      updateSetting('theme', 'dark');
+                    }}
                     className="flex items-center gap-2"
                   >
                     <Moon className="h-4 w-4" />
@@ -111,7 +101,10 @@ export function CustomizationModal({ open, onOpenChange }: CustomizationModalPro
                   <Button
                     variant={settings.theme === 'system' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => updateSetting('theme', 'system')}
+                    onClick={() => {
+                      playSound('click');
+                      updateSetting('theme', 'system');
+                    }}
                   >
                     System
                   </Button>
@@ -125,7 +118,10 @@ export function CustomizationModal({ open, onOpenChange }: CustomizationModalPro
                     <Button
                       key={key}
                       variant={settings.colorScheme === key ? 'default' : 'outline'}
-                      onClick={() => updateSetting('colorScheme', key as any)}
+                      onClick={() => {
+                        playSound('click');
+                        updateSetting('colorScheme', key as any);
+                      }}
                       className="justify-start"
                     >
                       <div 
@@ -153,11 +149,22 @@ export function CustomizationModal({ open, onOpenChange }: CustomizationModalPro
                   <Label htmlFor="sound-enabled">Sound Effects</Label>
                   <p className="text-sm text-muted-foreground">Play sounds for interactions</p>
                 </div>
-                <Switch
-                  id="sound-enabled"
-                  checked={settings.soundEnabled}
-                  onCheckedChange={(checked) => updateSetting('soundEnabled', checked)}
-                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => testSound('click')}
+                    className="text-xs"
+                  >
+                    <TestTube className="h-3 w-3 mr-1" />
+                    Test
+                  </Button>
+                  <Switch
+                    id="sound-enabled"
+                    checked={settings.soundEnabled}
+                    onCheckedChange={(checked) => updateSetting('soundEnabled', checked)}
+                  />
+                </div>
               </div>
               
               <div className="flex items-center justify-between">
@@ -190,7 +197,7 @@ export function CustomizationModal({ open, onOpenChange }: CustomizationModalPro
                 <Switch
                   id="notifications-enabled"
                   checked={settings.notificationsEnabled}
-                  onCheckedChange={(checked) => updateSetting('notificationsEnabled', checked)}
+                  onCheckedChange={handleNotificationToggle}
                 />
               </div>
               

@@ -1,13 +1,22 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { MoodPatternsModal } from "./MoodPatternsModal";
+import { JourneyProgressModal } from "./JourneyProgressModal";
+import { CustomizationModal } from "./CustomizationModal";
 
 export function YouPage() {
   const { signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [moodPatternsOpen, setMoodPatternsOpen] = useState(false);
+  const [journeyProgressOpen, setJourneyProgressOpen] = useState(false);
+  const [customizationOpen, setCustomizationOpen] = useState(false);
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -34,10 +43,13 @@ export function YouPage() {
       </div>
 
       {/* Mood Patterns */}
-      <Card className="p-4 bg-secondary/20 border-secondary/30 rounded-2xl">
+      <Card 
+        className="p-4 bg-secondary/20 border-secondary/30 rounded-2xl cursor-pointer hover:bg-secondary/30 transition-colors"
+        onClick={() => setMoodPatternsOpen(true)}
+      >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-lg">🟣</span>
+            <span className="text-lg">📊</span>
             <h3 className="font-medium text-foreground">Your Mood Patterns</h3>
           </div>
           <span className="text-muted-foreground">→</span>
@@ -46,13 +58,16 @@ export function YouPage() {
       </Card>
 
       {/* Journey Progress */}
-      <Card className="p-4 bg-secondary/20 border-secondary/30 rounded-2xl">
+      <Card 
+        className="p-4 bg-secondary/20 border-secondary/30 rounded-2xl cursor-pointer hover:bg-secondary/30 transition-colors"
+        onClick={() => setJourneyProgressOpen(true)}
+      >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-lg">🟣</span>
+            <span className="text-lg">🚀</span>
             <div>
               <h3 className="font-medium text-foreground">Your Journey Progress</h3>
-              <p className="text-sm text-muted-foreground">("Self-Worth Level 3")</p>
+              <p className="text-sm text-muted-foreground">Track your wellness journey</p>
             </div>
           </div>
           <span className="text-muted-foreground">→</span>
@@ -62,10 +77,13 @@ export function YouPage() {
       </Card>
 
       {/* Customize Your Space */}
-      <Card className="p-4 bg-secondary/20 border-secondary/30 rounded-2xl">
+      <Card 
+        className="p-4 bg-secondary/20 border-secondary/30 rounded-2xl cursor-pointer hover:bg-secondary/30 transition-colors"
+        onClick={() => setCustomizationOpen(true)}
+      >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-lg">🟣</span>
+            <span className="text-lg">⚙️</span>
             <div>
               <h3 className="font-medium text-foreground">Customize Your Space</h3>
               <p className="text-sm text-muted-foreground">Themes, Sounds, Notifications</p>
@@ -82,7 +100,11 @@ export function YouPage() {
             <span className="text-lg">💎</span>
             <h3 className="font-medium text-primary">Upgrade to SereniYou+</h3>
           </div>
-          <Button size="sm" className="bg-primary hover:bg-primary/90 text-white">
+          <Button 
+            size="sm" 
+            className="bg-primary hover:bg-primary/90 text-white"
+            onClick={() => navigate("/subscription")}
+          >
             Upgrade
           </Button>
         </div>
@@ -113,6 +135,20 @@ export function YouPage() {
           Sign Out
         </Button>
       </Card>
+
+      {/* Modals */}
+      <MoodPatternsModal 
+        open={moodPatternsOpen} 
+        onOpenChange={setMoodPatternsOpen} 
+      />
+      <JourneyProgressModal 
+        open={journeyProgressOpen} 
+        onOpenChange={setJourneyProgressOpen} 
+      />
+      <CustomizationModal 
+        open={customizationOpen} 
+        onOpenChange={setCustomizationOpen} 
+      />
     </div>
   );
 }

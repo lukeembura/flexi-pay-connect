@@ -28,25 +28,57 @@ const colorSchemes = {
     primary: '260 60% 65%',
     'primary-glow': '260 70% 75%',
     secondary: '260 30% 85%',
-    accent: '280 35% 85%'
+    accent: '280 35% 85%',
+    // Text colors for visibility
+    foreground: '240 10% 15%',
+    'muted-foreground': '240 8% 45%',
+    // Background colors
+    background: '260 20% 96%',
+    card: '260 25% 98%',
+    muted: '260 20% 92%',
+    border: '260 20% 88%'
   },
   sage: {
     primary: '120 25% 65%',
     'primary-glow': '120 35% 75%',
     secondary: '120 20% 85%',
-    accent: '140 35% 85%'
+    accent: '140 35% 85%',
+    // Text colors for visibility
+    foreground: '120 15% 20%',
+    'muted-foreground': '120 10% 40%',
+    // Background colors
+    background: '120 20% 96%',
+    card: '120 25% 98%',
+    muted: '120 20% 92%',
+    border: '120 20% 88%'
   },
   blush: {
     primary: '340 60% 70%',
     'primary-glow': '340 70% 80%',
     secondary: '340 30% 90%',
-    accent: '320 35% 85%'
+    accent: '320 35% 85%',
+    // Text colors for visibility
+    foreground: '340 15% 20%',
+    'muted-foreground': '340 10% 40%',
+    // Background colors
+    background: '340 20% 96%',
+    card: '340 25% 98%',
+    muted: '340 20% 92%',
+    border: '340 20% 88%'
   },
   ocean: {
     primary: '200 60% 65%',
     'primary-glow': '200 70% 75%',
     secondary: '200 30% 85%',
-    accent: '220 35% 85%'
+    accent: '220 35% 85%',
+    // Text colors for visibility
+    foreground: '200 15% 20%',
+    'muted-foreground': '200 10% 40%',
+    // Background colors
+    background: '200 20% 96%',
+    card: '200 25% 98%',
+    muted: '200 20% 92%',
+    border: '200 20% 88%'
   }
 };
 
@@ -74,7 +106,26 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     } else {
       applySettings(defaultSettings);
     }
-  }, []);
+
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+      if (settings.theme === 'system') {
+        const root = document.documentElement;
+        root.classList.toggle('dark', e.matches);
+        // Reapply color scheme for proper dark mode colors
+        if (settings.colorScheme) {
+          applyColorScheme(settings.colorScheme);
+        }
+      }
+    };
+
+    mediaQuery.addEventListener('change', handleSystemThemeChange);
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleSystemThemeChange);
+    };
+  }, [settings.theme, settings.colorScheme]);
 
   const applySettings = (newSettings: CustomizationSettings) => {
     // Apply theme
@@ -92,11 +143,21 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const applyTheme = (theme: 'light' | 'dark' | 'system') => {
     const root = document.documentElement;
     
+    // Remove existing dark class
+    root.classList.remove('dark');
+    
     if (theme === 'system') {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      root.classList.toggle('dark', prefersDark);
-    } else {
-      root.classList.toggle('dark', theme === 'dark');
+      if (prefersDark) {
+        root.classList.add('dark');
+      }
+    } else if (theme === 'dark') {
+      root.classList.add('dark');
+    }
+    
+    // Apply color scheme again to ensure proper dark mode colors
+    if (settings.colorScheme) {
+      applyColorScheme(settings.colorScheme);
     }
   };
 
@@ -104,8 +165,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const root = document.documentElement;
     const colors = colorSchemes[scheme];
     
-    // Remove any existing flower theme
-    root.classList.remove('flower-theme');
+    // Remove any existing theme classes
+    root.classList.remove('flower-theme', 'color-scheme-lavender', 'color-scheme-sage', 'color-scheme-blush', 'color-scheme-ocean');
+    
+    // Apply color scheme class for additional styling
+    root.classList.add(`color-scheme-${scheme}`);
     
     Object.entries(colors).forEach(([key, value]) => {
       root.style.setProperty(`--${key}`, value);

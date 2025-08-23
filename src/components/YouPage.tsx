@@ -50,10 +50,10 @@ export function YouPage() {
               <div className="text-3xl">🌸</div>
             </div>
           )}
-          <h1 className="text-2xl font-semibold text-foreground mb-2">
+          <h1 className="text-2xl font-semibold text-foreground text-visible mb-2">
             {isFlowerTheme ? '🌸 You 🌸' : '🧠 You'}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-muted-visible">
             {isFlowerTheme ? 'Your blossoming personalization garden' : 'Your personalization hub'}
           </p>
           {isFlowerTheme && (
@@ -77,11 +77,11 @@ export function YouPage() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="text-lg">{isFlowerTheme ? '🌸' : '📊'}</span>
-            <h3 className="font-medium text-foreground">Your Mood Patterns</h3>
+            <h3 className="font-medium text-foreground text-visible">Your Mood Patterns</h3>
           </div>
-          <span className="text-muted-foreground">→</span>
+          <span className="text-muted-foreground text-muted-visible">→</span>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground text-muted-visible">
           {isFlowerTheme ? 'Watch your emotional garden bloom with insights' : 'View insights from your daily check-ins'}
         </p>
         {isFlowerTheme && (
@@ -104,16 +104,16 @@ export function YouPage() {
           <div className="flex items-center gap-2">
             <span className="text-lg">{isFlowerTheme ? '🌱' : '🚀'}</span>
             <div>
-              <h3 className="font-medium text-foreground">Your Journey Progress</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="font-medium text-foreground text-visible">Your Journey Progress</h3>
+              <p className="text-sm text-muted-foreground text-muted-visible">
                 {isFlowerTheme ? 'Watch your wellness garden grow' : 'Track your wellness journey'}
               </p>
             </div>
           </div>
-          <span className="text-muted-foreground">→</span>
+          <span className="text-muted-foreground text-muted-visible">→</span>
         </div>
         <Progress value={60} className={`h-2 ${isFlowerTheme ? 'bg-pink-100' : 'bg-muted'}`} />
-        <p className="text-xs text-muted-foreground mt-2">
+        <p className="text-xs text-muted-foreground text-muted-visible mt-2">
           {isFlowerTheme ? '🌺 60% Bloomed' : '60% Complete'}
         </p>
         {isFlowerTheme && (
@@ -136,13 +136,13 @@ export function YouPage() {
           <div className="flex items-center gap-2">
             <span className="text-lg">{isFlowerTheme ? '🌷' : '⚙️'}</span>
             <div>
-              <h3 className="font-medium text-foreground">Customize Your Space</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="font-medium text-foreground text-visible">Customize Your Space</h3>
+              <p className="text-sm text-muted-foreground text-muted-visible">
                 {isFlowerTheme ? 'Design your blossoming sanctuary' : 'Themes, Sounds, Notifications'}
               </p>
             </div>
           </div>
-          <span className="text-muted-foreground">→</span>
+          <span className="text-muted-foreground text-muted-visible">→</span>
         </div>
         {isFlowerTheme && (
           <div className="absolute top-2 right-2 opacity-20">
@@ -177,7 +177,7 @@ export function YouPage() {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <span className="text-lg">{isFlowerTheme ? '🌸' : '🌈'}</span>
-            <h2 className="text-lg font-semibold text-foreground">
+            <h2 className="text-lg font-semibold text-foreground text-visible">
               {isFlowerTheme ? 'Flower Garden Aesthetic' : 'Colors & Aesthetic'}
             </h2>
           </div>
@@ -185,28 +185,28 @@ export function YouPage() {
           <div className="space-y-2">
             {isFlowerTheme ? (
               <>
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <p className="text-sm text-muted-foreground text-muted-visible flex items-center gap-2">
                   <span className="text-pink-400">🌸</span>
                   Blossoming cherry blossoms and rose gardens
                 </p>
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <p className="text-sm text-muted-foreground text-muted-visible flex items-center gap-2">
                   <span className="text-rose-400">🌺</span>
                   Gentle petal animations and floating flowers
                 </p>
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <p className="text-sm text-muted-foreground text-muted-visible flex items-center gap-2">
                   <span className="text-pink-400">🌷</span>
                   Soft pink gradients and floral patterns
                 </p>
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <p className="text-sm text-muted-foreground text-muted-visible flex items-center gap-2">
                   <span className="text-rose-400">🌹</span>
                   Calming flower-themed sounds and visuals
                 </p>
               </>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground">• Soft lavender, blush pink, sage green</p>
-                <p className="text-sm text-muted-foreground">• Calm animations (clouds, petals, breathing guides)</p>
-                <p className="text-sm text-muted-foreground">• Gentle sounds (chimes, water, soft wind)</p>
+                <p className="text-sm text-muted-foreground text-muted-visible">• Soft lavender, blush pink, sage green</p>
+                <p className="text-sm text-muted-foreground text-muted-visible">• Calm animations (clouds, petals, breathing guides)</p>
+                <p className="text-sm text-muted-foreground text-muted-visible">• Gentle sounds (chimes, water, soft wind)</p>
               </>
             )}
           </div>

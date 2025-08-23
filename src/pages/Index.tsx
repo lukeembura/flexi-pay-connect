@@ -11,6 +11,7 @@ import { YouPage } from "@/components/YouPage";
 import { JournalPage } from "@/components/JournalPage";
 import { InsightsPage } from "@/components/InsightsPage";
 import { CirclesPage } from "@/components/CirclesPage";
+import { FlowerTheme } from "@/components/FlowerTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -84,6 +85,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-peaceful">
+      <FlowerTheme />
       <div className="container mx-auto px-4 py-6 pb-24 max-w-md">
         {renderContent()}
       </div>

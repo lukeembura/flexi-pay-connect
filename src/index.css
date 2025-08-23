@@ -81,6 +81,17 @@ All colors MUST be HSL.
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Flower Theme Variables - Only active when blush pink is selected */
+    --flower-primary: 340 60% 70%;
+    --flower-secondary: 340 30% 90%;
+    --flower-accent: 320 35% 85%;
+    --flower-petal-1: 340 70% 80%;
+    --flower-petal-2: 320 65% 75%;
+    --flower-petal-3: 360 60% 70%;
+    --flower-center: 340 50% 60%;
+    --flower-stem: 120 40% 50%;
+    --flower-leaf: 120 35% 65%;
   }
 
   .dark {
@@ -130,4 +141,46 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Flower Theme Classes */
+.flower-theme {
+  --primary: var(--flower-primary);
+  --primary-glow: var(--flower-petal-1);
+  --secondary: var(--flower-secondary);
+  --accent: var(--flower-accent);
+  --background: 340 20% 96%;
+  --card: 340 25% 98%;
+  --muted: 340 20% 92%;
+  --border: 340 20% 88%;
+}
+
+/* Flower Animation Keyframes */
+@keyframes flower-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(-5px) rotate(2deg); }
+  50% { transform: translateY(-10px) rotate(0deg); }
+  75% { transform: translateY(-5px) rotate(-2deg); }
+}
+
+@keyframes petal-sway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(5deg); }
+}
+
+@keyframes flower-glow {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50% { filter: brightness(1.1) saturate(1.2); }
+}
+
+.flower-float {
+  animation: flower-float 6s ease-in-out infinite;
+}
+
+.petal-sway {
+  animation: petal-sway 4s ease-in-out infinite;
+}
+
+.flower-glow {
+  animation: flower-glow 3s ease-in-out infinite;
 }

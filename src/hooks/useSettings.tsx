@@ -104,9 +104,17 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const root = document.documentElement;
     const colors = colorSchemes[scheme];
     
+    // Remove any existing flower theme
+    root.classList.remove('flower-theme');
+    
     Object.entries(colors).forEach(([key, value]) => {
       root.style.setProperty(`--${key}`, value);
     });
+    
+    // Apply flower theme if blush is selected
+    if (scheme === 'blush') {
+      root.classList.add('flower-theme');
+    }
   };
 
   const updateSetting = <K extends keyof CustomizationSettings>(

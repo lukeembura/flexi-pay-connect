@@ -12,7 +12,7 @@ interface PasswordStrength {
   suggestions: string[];
 }
 
-const getPasswordStrength = (password: string): PasswordStrength => {
+export function getPasswordStrength(password: string): PasswordStrength {
   let score = 0;
   const suggestions: string[] = [];
 
@@ -74,7 +74,7 @@ const getPasswordStrength = (password: string): PasswordStrength => {
   }
 
   return { score, label, color, suggestions };
-};
+}
 
 export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({ password }) => {
   if (!password) return null;
@@ -84,23 +84,10 @@ export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps>
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">Password strength:</span>
-        <span className={cn(
-          "text-sm font-medium",
-          strength.score <= 2 && "text-destructive",
-          strength.score === 3 && "text-yellow-600",
-          strength.score === 4 && "text-blue-600",
-          strength.score >= 5 && "text-green-600"
-        )}>
-          {strength.label}
-        </span>
-      </div>
-      
-      <div className="w-full bg-muted rounded-full h-2">
-        <div 
+      <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+        <div
           className={cn("h-2 rounded-full transition-all duration-300", strength.color)}
-          style={{ width: `${progressPercentage}%` }}
+          style={{ width: `${progressPercentage}%`, maxWidth: '100%' }} // Ensure it never exceeds 100%
         />
       </div>
       

@@ -120,6 +120,14 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
+        <CardHeader className="flex flex-col items-center">
+          <Leaf className="h-8 w-8 text-primary mb-2" />
+          <CardTitle className="text-2xl font-bold text-center">SereniYou</CardTitle>
+          <CardDescription className="text-center">
+            Welcome<br />
+            Sign in to your account or create a new one to continue your wellness journey
+          </CardDescription>
+        </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">

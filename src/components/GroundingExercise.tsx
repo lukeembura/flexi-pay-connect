@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Volume2, VolumeX } from "lucide-react";
 
 interface GroundingExerciseProps {
   onClose: () => void;
@@ -38,18 +38,76 @@ const groundingSteps = [
 export function GroundingExercise({ onClose }: GroundingExerciseProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  // Load available voices once
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    const synth = window.speechSynthesis;
+    const loadVoices = () => {
+      const v = synth.getVoices();
+      if (v.length) setVoices(v);
+    };
+
+    loadVoices();
+    synth.onvoiceschanged = loadVoices;
+
+    return () => {
+      synth.onvoiceschanged = null as any;
+    };
+  }, []);
+
+  const speak = (text: string) => {
+    if (!voiceEnabled) return;
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    try {
+      const synth = window.speechSynthesis;
+      synth.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      const preferred = voices.find(v => /Google UK English Female|Google US English|English/i.test(v.name));
+      if (preferred) utterance.voice = preferred;
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      synth.speak(utterance);
+    } catch (_) {
+      // noop
+    }
+  };
+
+  // Speak current step
+  useEffect(() => {
+    const step = groundingSteps[currentStep];
+    if (!isComplete && step) {
+      speak(`${step.title}. ${step.instruction}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, isComplete]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   const handleNext = () => {
     if (currentStep < groundingSteps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
       setIsComplete(true);
+      speak("Well done. You have completed the grounding exercise.");
     }
   };
 
   const handleRestart = () => {
     setCurrentStep(0);
     setIsComplete(false);
+    speak("Let's begin again. Start with five things you can see.");
   };
 
   if (isComplete) {
@@ -65,7 +123,7 @@ export function GroundingExercise({ onClose }: GroundingExerciseProps) {
           <Button onClick={handleRestart} variant="outline">
             Practice Again
           </Button>
-          <Button onClick={onClose}>
+          <Button onClick={() => { onClose(); if (typeof window !== "undefined" && "speechSynthesis" in window) { window.speechSynthesis.cancel(); } }}>
             Continue
           </Button>
         </div>
@@ -82,14 +140,26 @@ export function GroundingExercise({ onClose }: GroundingExerciseProps) {
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={onClose}
+          onClick={() => { onClose(); if (typeof window !== "undefined" && "speechSynthesis" in window) { window.speechSynthesis.cancel(); } }}
           className="text-muted-foreground hover:text-foreground"
+          aria-label="Back"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="text-sm text-muted-foreground">
-          {currentStep + 1} of {groundingSteps.length}
-        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={voiceEnabled ? "Mute guidance" : "Unmute guidance"}
+          onClick={() => {
+            setVoiceEnabled(v => !v);
+            if (typeof window !== "undefined" && "speechSynthesis" in window) {
+              window.speechSynthesis.cancel();
+            }
+          }}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          {voiceEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+        </Button>
       </div>
 
       <div className="w-full bg-muted rounded-full h-2">

@@ -13,8 +13,8 @@ export interface CustomizationSettings {
 }
 
 const defaultSettings: CustomizationSettings = {
-  theme: 'system',
-  colorScheme: 'lavender',
+  theme: 'light',
+  colorScheme: 'ocean',
   soundEnabled: true,
   backgroundSounds: false,
   notificationsEnabled: true,

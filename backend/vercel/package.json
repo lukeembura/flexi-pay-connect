@@ -1,0 +1,10 @@
+{
+  "name": "vercel-backend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.55.0"
+  }
+}
+

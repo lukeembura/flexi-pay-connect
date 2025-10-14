@@ -67,6 +67,8 @@ export function SubscriptionPlans() {
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const { toast } = useToast();
 
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined;
+
   const handleSubscribe = async (planId: string) => {
     if (!phoneNumber) {
       toast({
@@ -77,7 +79,6 @@ export function SubscriptionPlans() {
       return;
     }
 
-    // Validate phone number format
     const phoneRegex = /^254[17]\d{8}$/;
     if (!phoneRegex.test(phoneNumber)) {
       toast({
@@ -88,15 +89,32 @@ export function SubscriptionPlans() {
       return;
     }
 
+    if (!apiBaseUrl) {
+      toast({ title: "Missing configuration", description: "VITE_API_BASE_URL is not set", variant: "destructive" });
+      return;
+    }
+
     setLoading(planId);
     setSelectedPlan(planId);
     
     try {
-      const { data, error } = await supabase.functions.invoke('initiate-payment', {
-        body: { phoneNumber, planId }
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        throw new Error("User not authenticated");
+      }
+
+      const res = await fetch(`${apiBaseUrl}/api/initiate-payment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ phoneNumber, planId }),
       });
 
-      if (error) throw error;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to initiate payment");
 
       toast({
         title: "Payment Request Sent",
@@ -104,8 +122,6 @@ export function SubscriptionPlans() {
       });
 
       setPaymentStatus("pending");
-      
-      // Start polling for payment status
       const checkoutRequestId = data.checkoutRequestId;
       pollPaymentStatus(checkoutRequestId);
 
@@ -121,16 +137,26 @@ export function SubscriptionPlans() {
   };
 
   const pollPaymentStatus = async (checkoutRequestId: string) => {
-    const maxAttempts = 30; // 30 attempts over 3 minutes
+    const maxAttempts = 30;
     let attempts = 0;
 
     const checkStatus = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('check-payment-status', {
-          body: { checkoutRequestId }
-        });
+        if (!apiBaseUrl) return;
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+        if (!accessToken) throw new Error("User not authenticated");
 
-        if (error) throw error;
+        const res = await fetch(`${apiBaseUrl}/api/check-payment-status`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ checkoutRequestId }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Status check failed");
 
         if (data.status === "completed" && data.resultCode === 0) {
           setPaymentStatus("success");
@@ -149,10 +175,9 @@ export function SubscriptionPlans() {
           return;
         }
 
-        // Continue polling if still pending
         attempts++;
         if (attempts < maxAttempts) {
-          setTimeout(checkStatus, 6000); // Check every 6 seconds
+          setTimeout(checkStatus, 6000);
         } else {
           setPaymentStatus("timeout");
           toast({
@@ -162,7 +187,6 @@ export function SubscriptionPlans() {
           });
         }
       } catch (error) {
-        console.error("Status check error:", error);
         attempts++;
         if (attempts < maxAttempts) {
           setTimeout(checkStatus, 6000);

@@ -79,10 +79,22 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ## Deployment overview
 
-- Frontend: Build and deploy `frontend/dist/` to your static host. Ensure the `VITE_` env vars are configured in the host.
-- Backend: Deploy migrations and edge functions to your Supabase project using the CLI. Configure secrets and any third‑party API keys (e.g., payments) in Supabase.
+- Frontend (Netlify):
+  - Use `netlify.toml` in repo root. It builds from `frontend/` and publishes `dist/`.
+  - Configure env variables in Netlify: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_BASE_URL` (pointing to your Vercel backend base URL).
+  - SPA redirect is included.
+
+- Backend (Vercel):
+  - Deploy `backend/vercel` as a separate Vercel project.
+  - API routes: `/api/initiate-payment`, `/api/check-payment-status`, `/api/mpesa-callback`.
+  - Required env vars in Vercel Project Settings:
+    - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+    - `PUBLIC_BASE_URL` (the Vercel deployment base URL, used for callback URL)
+    - `MPESA_ENVIRONMENT` (sandbox|production), `MPESA_CONSUMER_KEY`, `MPESA_CONSUMER_SECRET`, `MPESA_SHORTCODE`, `MPESA_PASSKEY`
+  - `backend/vercel/vercel.json` configures Edge runtime for the APIs.
 
 ## Notes
 
 - If you previously referenced files in `supabase/`, update paths to `backend/supabase/`.
-- CI/CD users can create separate workflows: one for frontend (`cd frontend && npm ci && npm run build`) and one for backend (`cd backend/supabase && supabase functions deploy && supabase db push`).
+- Frontend calls backend via `VITE_API_BASE_URL` to Vercel. Ensure users are authenticated in Supabase so the Authorization header is present.
+- CI/CD can be split: frontend (`cd frontend && npm ci && npm run build`) and backend (`cd backend/vercel && vercel deploy --prod`).

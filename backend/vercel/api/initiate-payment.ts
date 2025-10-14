@@ -74,7 +74,7 @@ async function initiateStkPush(accessToken: string, phoneNumber: string, amount:
   return data;
 }
 
-export const config = { runtime: 'edge' };
+// Using Node.js runtime
 
 export default async function handler(req: Request) {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });

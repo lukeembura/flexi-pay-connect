@@ -12,7 +12,7 @@ function json(res: Response, body: any, status = 200) {
   });
 }
 
-export const config = { runtime: 'edge' };
+// Using Node.js runtime
 
 export default async function handler(req: Request) {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });

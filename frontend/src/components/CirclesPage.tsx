@@ -434,7 +434,7 @@ export function CirclesPage() {
       {filteredCircles.map((circle) => (
         <Card key={circle.id} className="p-4">
           <div className="flex items-start gap-4">
-            <div className={`w-12 h-12 ${circle.color} rounded-xl flex items-center justify-center text-white text-xl`}>
+            <div className={`w-12 h-12 ${circle.color} rounded-xl flex items-center justify-center text-primary-foreground text-xl`}>
               {circle.icon}
             </div>
             

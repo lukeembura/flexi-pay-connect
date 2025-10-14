@@ -160,7 +160,7 @@ export function YouPage() {
           </div>
           <Button 
             size="sm" 
-            className="bg-primary hover:bg-primary/90 text-white"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
             onClick={() => navigate("/subscription")}
           >
             Upgrade

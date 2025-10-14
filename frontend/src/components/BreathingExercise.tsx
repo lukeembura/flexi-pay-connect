@@ -151,7 +151,7 @@ export function BreathingExercise({ onClose }: BreathingExerciseProps) {
       <div className="mb-8">
         <div className={`w-32 h-32 rounded-full mx-auto mb-4 transition-all duration-300 ${phases[currentPhase].color} flex items-center justify-center`}>
           <div 
-            className="w-24 h-24 rounded-full bg-white/20 transition-all duration-300"
+            className="w-24 h-24 rounded-full bg-card/20 transition-all duration-300"
             style={{ 
               transform: isActive ? `scale(${0.8 + (progress / 100) * 0.4})` : 'scale(1)' 
             }}

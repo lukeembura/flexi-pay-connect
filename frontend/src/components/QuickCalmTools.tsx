@@ -18,11 +18,11 @@ function CalmTool({ icon, title, duration, color, onClick }: CalmToolProps) {
         <div className="flex items-center gap-3">
           <div className="text-2xl animate-breathe">{icon}</div>
           <div>
-            <h4 className="font-semibold text-white">{title}</h4>
-            <p className="text-white/80 text-sm">{duration}</p>
+            <h4 className="font-semibold text-primary-foreground">{title}</h4>
+            <p className="text-primary-foreground/80 text-sm">{duration}</p>
           </div>
         </div>
-        <div className="text-white/80 group-hover:text-white transition-colors duration-300 group-hover:translate-x-1">
+        <div className="text-primary-foreground/80 group-hover:text-primary-foreground transition-colors duration-300 group-hover:translate-x-1">
           →
         </div>
       </div>

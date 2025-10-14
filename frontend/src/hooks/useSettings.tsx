@@ -171,8 +171,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     // Apply color scheme class for additional styling
     root.classList.add(`color-scheme-${scheme}`);
     
-    Object.entries(colors).forEach(([key, value]) => {
-      root.style.setProperty(`--${key}`, value);
+    // IMPORTANT: Do not override base tokens like background/foreground via inline style.
+    // Those are controlled by CSS and have proper `.dark` overrides.
+    // Only set safe, accent-oriented tokens that do not break dark mode.
+    const safeTokens: Array<keyof typeof colors> = ['primary', 'primary-glow', 'secondary', 'accent'];
+    safeTokens.forEach((key) => {
+      const value = colors[key as keyof typeof colors];
+      if (value) {
+        root.style.setProperty(`--${key as string}`, value as string);
+      }
     });
     
     // Apply flower theme if blush is selected

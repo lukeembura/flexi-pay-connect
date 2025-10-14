@@ -1,73 +1,88 @@
-# Welcome to your Lovable project
+# Flexi Pay Connect
 
-## Project info
+## Monorepo structure
 
-**URL**: https://lovable.dev/projects/e47176bb-9fca-4199-b9ed-7d4bd24e70fc
-
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/e47176bb-9fca-4199-b9ed-7d4bd24e70fc) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+/ (repo root)
+├─ frontend/               # Vite + React app
+│  ├─ src/
+│  ├─ public/
+│  ├─ dist/
+│  ├─ vite.config.ts
+│  └─ package.json
+└─ backend/
+   └─ supabase/            # Supabase project (SQL, edge functions)
+      ├─ migrations/
+      ├─ functions/
+      └─ config.toml
 ```
 
-**Edit a file directly in GitHub**
+The frontend app has been moved to `frontend/`. The Supabase backend is in `backend/supabase`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Frontend (Vite + React)
 
-**Use GitHub Codespaces**
+- Node.js 18+ recommended
+- Commands (run inside `frontend/`):
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```sh
+cd frontend
+npm install
+npm run dev
+# build
+npm run build
+# preview built assets
+npm run preview
+```
 
-## What technologies are used for this project?
+Deploy the frontend to any static host (e.g., Netlify, Vercel, Cloudflare Pages, S3 + CloudFront). The production build is emitted to `frontend/dist/`.
 
-This project is built with:
+## Backend (Supabase)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+The backend is a Supabase project containing SQL migrations and Edge Functions.
 
-## How can I deploy this project?
+- Location: `backend/supabase`
+- Requirements: Supabase CLI (`npm i -g supabase`)
 
-Simply open [Lovable](https://lovable.dev/projects/e47176bb-9fca-4199-b9ed-7d4bd24e70fc) and click on Share -> Publish.
+Typical commands (run from `backend/supabase`):
 
-## Can I connect a custom domain to my Lovable project?
+```sh
+# Start local Supabase stack
+supabase start
 
-Yes, you can!
+# Link to a remote Supabase project (once)
+supabase link --project-ref <your-project-ref>
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+# Push database schema
+supabase db push
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+# Deploy all functions
+supabase functions deploy --project-ref <your-project-ref>
+```
+
+Edge Functions live in `backend/supabase/functions/*`. Update any environment variables and secrets in your Supabase project settings.
+
+## Frontend <-> Backend configuration
+
+The frontend uses Supabase via `@supabase/supabase-js` and expects `VITE_` env vars at build time:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+Define these in a `.env` file inside `frontend/` for local dev, and in your hosting provider settings for production.
+
+Example `frontend/.env`:
+
+```env
+VITE_SUPABASE_URL=https://xxxxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+## Deployment overview
+
+- Frontend: Build and deploy `frontend/dist/` to your static host. Ensure the `VITE_` env vars are configured in the host.
+- Backend: Deploy migrations and edge functions to your Supabase project using the CLI. Configure secrets and any third‑party API keys (e.g., payments) in Supabase.
+
+## Notes
+
+- If you previously referenced files in `supabase/`, update paths to `backend/supabase/`.
+- CI/CD users can create separate workflows: one for frontend (`cd frontend && npm ci && npm run build`) and one for backend (`cd backend/supabase && supabase functions deploy && supabase db push`).

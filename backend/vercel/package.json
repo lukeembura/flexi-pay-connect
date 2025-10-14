@@ -2,9 +2,13 @@
   "name": "vercel-backend",
   "private": true,
   "version": "0.1.0",
-  "type": "module",
   "dependencies": {
-    "@supabase/supabase-js": "^2.55.0"
+    "@supabase/supabase-js": "^2.55.0",
+    "@vercel/node": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
   }
 }
 

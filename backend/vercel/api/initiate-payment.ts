@@ -1,16 +1,11 @@
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
-
-function json(res: Response, body: any, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
 
 async function getMpesaAccessToken() {
   const consumerKey = process.env.MPESA_CONSUMER_KEY;
@@ -74,10 +69,15 @@ async function initiateStkPush(accessToken: string, phoneNumber: string, amount:
   return data;
 }
 
-// Using Node.js runtime
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Handle CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'authorization, x-client-info, apikey, content-type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 
-export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
 
   try {
     const supabaseClient = createClient(
@@ -85,22 +85,32 @@ export default async function handler(req: Request) {
       process.env.SUPABASE_ANON_KEY || ''
     );
 
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) return json(new Response(), { error: 'No authorization header provided' }, 401);
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: 'No authorization header provided' });
+    }
 
     const token = authHeader.replace('Bearer ', '');
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError || !userData.user) return json(new Response(), { error: 'User not authenticated' }, 401);
+    if (userError || !userData.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
-    const { phoneNumber, planId } = await req.json();
-    if (!phoneNumber || !planId) return json(new Response(), { error: 'Phone number and plan ID are required' }, 400);
+    const { phoneNumber, planId } = req.body;
+    if (!phoneNumber || !planId) {
+      return res.status(400).json({ error: 'Phone number and plan ID are required' });
+    }
 
     const kenyanPhoneRegex = /^254[17]\d{8}$/;
-    if (!kenyanPhoneRegex.test(phoneNumber)) return json(new Response(), { error: 'Invalid phone number. Use format: 254XXXXXXXXX' }, 400);
+    if (!kenyanPhoneRegex.test(phoneNumber)) {
+      return res.status(400).json({ error: 'Invalid phone number. Use format: 254XXXXXXXXX' });
+    }
 
     const amounts: Record<string, number> = { monthly: 2000, annual: 10000 };
     const amount = amounts[planId];
-    if (!amount) return json(new Response(), { error: 'Invalid plan selected' }, 400);
+    if (!amount) {
+      return res.status(400).json({ error: 'Invalid plan selected' });
+    }
 
     const accessToken = await getMpesaAccessToken();
     const accountReference = `${userData.user.id.slice(0, 8)}-${planId}`;
@@ -122,15 +132,17 @@ export default async function handler(req: Request) {
       status: 'pending',
       created_at: new Date().toISOString(),
     });
-    if (insertResult.error) return json(new Response(), { error: `Database error: ${insertResult.error.message}` }, 500);
+    
+    if (insertResult.error) {
+      return res.status(500).json({ error: `Database error: ${insertResult.error.message}` });
+    }
 
-    return json(new Response(), {
+    return res.status(200).json({
       success: true,
       message: 'Payment request sent. Please check your phone and enter your M-Pesa PIN.',
       checkoutRequestId: stkPushResponse.CheckoutRequestID,
     });
   } catch (e: any) {
-    return json(new Response(), { error: e?.message || 'Payment failed' }, 500);
+    return res.status(500).json({ error: e?.message || 'Payment failed' });
   }
 }
-

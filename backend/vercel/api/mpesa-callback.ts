@@ -1,14 +1,12 @@
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'authorization, x-client-info, apikey, content-type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 
-// Using Node.js runtime
-
-export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
     const supabaseService = createClient(
@@ -17,10 +15,10 @@ export default async function handler(req: Request) {
       { auth: { persistSession: false } }
     );
 
-    const callbackData = await req.json();
-    const { Body } = callbackData;
+    const callbackData = req.body;
+    const Body = (callbackData as any)?.Body;
     if (!Body || !Body.stkCallback) {
-      return new Response('Invalid callback format', { status: 400 });
+      return res.status(400).send('Invalid callback format');
     }
 
     const { stkCallback } = Body;
@@ -55,7 +53,7 @@ export default async function handler(req: Request) {
       .single();
 
     if (updateError) {
-      return new Response('Error updating payment', { status: 500 });
+      return res.status(500).send('Error updating payment');
     }
 
     if (ResultCode === 0 && paymentRequest) {
@@ -76,9 +74,9 @@ export default async function handler(req: Request) {
       );
     }
 
-    return new Response('OK', { status: 200 });
+    return res.status(200).send('OK');
   } catch (e) {
-    return new Response('Error processing callback', { status: 500 });
+    return res.status(500).send('Error processing callback');
   }
 }
 

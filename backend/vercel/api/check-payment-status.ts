@@ -1,21 +1,12 @@
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'authorization, x-client-info, apikey, content-type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 
-function json(res: Response, body: any, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
-
-// Using Node.js runtime
-
-export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
     const supabaseClient = createClient(
@@ -23,15 +14,15 @@ export default async function handler(req: Request) {
       process.env.SUPABASE_ANON_KEY || ''
     );
 
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) return json(new Response(), { error: 'No authorization header provided' }, 401);
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'No authorization header provided' });
 
     const token = authHeader.replace('Bearer ', '');
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError || !userData.user) return json(new Response(), { error: 'User not authenticated' }, 401);
+    if (userError || !userData.user) return res.status(401).json({ error: 'User not authenticated' });
 
-    const { checkoutRequestId } = await req.json();
-    if (!checkoutRequestId) return json(new Response(), { error: 'Checkout request ID is required' }, 400);
+    const checkoutRequestId = (req.body && (req.body as any).checkoutRequestId) || (req.query.checkoutRequestId as string);
+    if (!checkoutRequestId) return res.status(400).json({ error: 'Checkout request ID is required' });
 
     const { data: paymentRequest, error: queryError } = await supabaseClient
       .from('payment_requests')
@@ -39,7 +30,7 @@ export default async function handler(req: Request) {
       .eq('checkout_request_id', checkoutRequestId)
       .eq('user_id', userData.user.id)
       .single();
-    if (queryError || !paymentRequest) return json(new Response(), { error: 'Payment request not found' }, 404);
+    if (queryError || !paymentRequest) return res.status(404).json({ error: 'Payment request not found' });
 
     const { data: subscription } = await supabaseClient
       .from('subscribers')
@@ -47,7 +38,7 @@ export default async function handler(req: Request) {
       .eq('user_id', userData.user.id)
       .single();
 
-    return json(new Response(), {
+    return res.status(200).json({
       status: paymentRequest.status,
       resultCode: paymentRequest.result_code,
       resultDescription: paymentRequest.result_description,
@@ -57,7 +48,7 @@ export default async function handler(req: Request) {
       subscriptionEnd: subscription?.subscription_end,
     });
   } catch (e: any) {
-    return json(new Response(), { error: e?.message || 'Status check failed' }, 500);
+    return res.status(500).json({ error: e?.message || 'Status check failed' });
   }
 }
 
